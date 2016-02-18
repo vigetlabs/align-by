@@ -6,7 +6,7 @@ Align text around a specified anchor.
 
 Imagine you have some text that looks like this:
 
-```
+```js
 import React from 'react'
 import { this, that } from 'package'
 import PrimaryNav from 'components/primary-nav'
@@ -16,7 +16,7 @@ import { DuneBlaster } from 'equipment'
 
 and you want to make it look like this:
 
-```
+```js
 import React           from 'react'
 import { this, that }  from 'package'
 import PrimaryNav      from 'components/primary-nav'
