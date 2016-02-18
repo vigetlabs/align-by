@@ -6,7 +6,7 @@
   "activationCommands": {
     "atom-workspace": "align-by:align"
   },
-  "repository": "https://github.com/efatsi/align-by",
+  "repository": "https://github.com/vigetlabs/align-by",
   "license": "MIT",
   "engines": {
     "atom": ">=0.174.0 <2.0.0"
