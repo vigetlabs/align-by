@@ -13,17 +13,38 @@ module.exports =
 
   align: ->
     if @editor()
-      selection        = @editor().getSelectedText()
+      selection = @editor().getSelectedText().trim()
+      return if selection.length == 0
+
+      currentRow       = @editor().getCursorBufferPosition().row
       selectionMapping = @generateSelectionMapping(selection)
       maxIndex         = @findMaxIndex(selectionMapping)
+      firstLine        = Math.min.apply(Math, Object.keys(selectionMapping))
+      lastLine         = Math.max.apply(Math, Object.keys(selectionMapping))
+      newLines         = []
 
       for line, index of selectionMapping
-        line  = parseInt(line)
-        index = parseInt(index)
+        line   = parseInt(line)
+        index  = parseInt(index)
+        offset = @findOffset(maxIndex, index, line, selection)
 
-        if index < maxIndex
-          @editor().setTextInBufferRange([[line, index],[line, index]], " ".repeat(maxIndex - index))
+        if line == currentRow
+          startColumn = @textFor(line).indexOf(selection) + offset
 
+        if offset > 0
+          newLine = @textFor(line).replace(selection, " ".repeat(offset) + selection)
+        else if offset == 0
+          newLine = @textFor(line)
+        else
+          newLine = @textFor(line).replace(" ".repeat(offset * -1) + selection, selection)
+
+        newLines.push(newLine)
+
+      @editor().setTextInBufferRange([[firstLine, 0], [lastLine, Infinity]], newLines.join("\n"))
+      @editor().setSelectedBufferRange([
+        [currentRow, startColumn],
+        [currentRow, startColumn + selection.length]
+      ])
 
   findMaxIndex: (mapping) ->
     max = 0
@@ -35,12 +56,12 @@ module.exports =
 
   generateSelectionMapping: (selection) ->
     mapping = {}
-    mapping[@currentFocus()] = @textFor(@currentFocus()).indexOf(selection)
+    mapping[@currentFocus()] = @findIndex(@currentFocus(), selection)
 
     rowFocus = @currentFocus()
     while upperBound == undefined
       rowFocus -= 1
-      index = @textFor(rowFocus).indexOf(selection)
+      index = @findIndex(rowFocus, selection)
 
       if index != -1
         mapping[rowFocus] = index
@@ -50,7 +71,7 @@ module.exports =
     rowFocus = @currentFocus()
     while lowerBound == undefined
       rowFocus += 1
-      index = @textFor(rowFocus).indexOf(selection)
+      index = @findIndex(rowFocus, selection)
 
       if index != -1
         mapping[rowFocus] = index
@@ -59,9 +80,23 @@ module.exports =
 
     mapping
 
+  findIndex: (row, selection) ->
+    lineText = @textFor(row) || ""
+    regex    = new RegExp("\\s+" + selection)
 
-  textFor: (row) ->
-    @editor().lineTextForBufferRow(row) || ""
+    lineText.search(regex)
+
+
+  findOffset: (maxIndex, index, line, selection) ->
+    maxIndex - index - @numberOfLeadingSpaces(line, selection) + 1
+
+
+  numberOfLeadingSpaces: (line, selection) ->
+    @textFor(line).indexOf(selection) - @findIndex(line, selection)
+
+
+  textFor: (line) ->
+    @editor().lineTextForBufferRow(line)
 
 
   currentFocus: ->
